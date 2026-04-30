@@ -5,6 +5,7 @@
 #include "tensor.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 size_t tensor_get_num_elements(int32_t n_dim, const int32_t *shape) {
     if (n_dim <= 0 || n_dim > MAX_DIM) 

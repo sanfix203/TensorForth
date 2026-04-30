@@ -12,6 +12,10 @@ typedef struct {
     int top;
 } Stack;
 
-
+void stack_init(Stack *s);
+void stack_push(Stack *s, Tensor *t);
+Tensor* stack_pop(Stack *s);
+Tensor* stack_peek(Stack *s);
+void stack_cleanup(Stack *s);
 
 #endif

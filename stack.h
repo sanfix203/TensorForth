@@ -3,19 +3,42 @@
 #ifndef STACK_H
 #define STACK_H
 
+#include "tensor.h"
+#include <stdbool.h>
+
 #define STACK_MAX_SIZE 1024
 
-#include "tensor.h"
+typedef enum {
+    ITEM_TENSOR,
+    ITEM_STRING
+} ItemType;
 
 typedef struct {
-    Tensor* items[STACK_MAX_SIZE];
+    ItemType type;
+    union {
+        Tensor *tensor; // Usato se type == ITEM_TENSOR
+        char *string;   // Usato se type == ITEM_STRING
+    } data;
+} StackItem;
+
+/* Seppur occupare un intera sezione di memoria proporzionale a STACK_MAX_SIZE
+/ possa sembrare uno spreco, valutando i trade-off tra allocarla subito e allocarla
+/ dinamicamente con malloc si è scelta la prima opzione per aumentare la velocità
+/ di esecuzione in cambio di un po' di spazio occupato in più */
+typedef struct {
+    StackItem items[STACK_MAX_SIZE];
     int top;
 } Stack;
 
 void stack_init(Stack *s);
-void stack_push(Stack *s, Tensor *t);
-Tensor* stack_pop(Stack *s);
-Tensor* stack_peek(Stack *s);
 void stack_cleanup(Stack *s);
 
-#endif
+void stack_push_tensor(Stack *s, Tensor *t);
+void stack_push_string(Stack *s, const char *str);
+
+Tensor* stack_pop_tensor(Stack *s);
+char* stack_pop_string(Stack *s);
+
+Tensor* stack_peek_tensor(Stack *s);
+
+#endif // STACK_H

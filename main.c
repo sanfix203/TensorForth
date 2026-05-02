@@ -7,6 +7,7 @@
 #include "tensor.h"
 #include "stack.h"
 #include "debug.h"
+#include "operations.h"
 
 // Dimensione massima per il buffer di lettura temporaneo
 #define MAX_BUFFER_SIZE 2048
@@ -18,7 +19,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // 2. Apertura del file sorgente
+    // Apertura del file sorgente
     FILE *file = fopen(argv[1], "r");
     if (file == NULL) {
         perror("Errore nell'apertura del file sorgente");
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
                     filename[i++] = (char)ch;
                 }
             }
-            filename[i] = '\0'; // Terminatore di stringa C
+            filename[i] = '\0'; // Terminatore di stringa
             
             stack_push_string(&stack, filename);
             DEBUG_PRINT("Inserito filename nello stack: '%s'\n", filename);
@@ -103,19 +104,40 @@ int main(int argc, char *argv[]) {
             char op = (char)ch;
             
             switch(op) {
-                case '+':
+                case '+':{
                     DEBUG_PRINT("operatore '%c'\n", op);
-                    // TODO: a = pop(), b = pop(), push(a+b)
-                    break;
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_add(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '-':{
+                    DEBUG_PRINT("operatore '%c'\n", op);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_sub(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '*':{
+                    DEBUG_PRINT("operatore '%c'\n", op);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_mul(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
                 case 'd':
                     DEBUG_PRINT("operatore '%c' (dup)\n", op);
                     // stack_push(&stack, tensor_reference(stack_peek(&stack)));
                     break;
-                case 'p':
+                case 'p':{
                     DEBUG_PRINT("operatore '%c' (print)\n", op);
-                    // TODO: stampa e consuma
-                    break;
-                
+                    Tensor *t = stack_pop_tensor(&stack);
+                    tensor_print(t);
+                    break;}
+  
                 // ecc
                 
                 default:

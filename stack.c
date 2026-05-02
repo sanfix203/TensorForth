@@ -3,52 +3,102 @@
 #include "stack.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void stack_init(Stack *s) {
-    if (s == NULL){
-        fprintf(stderr, "Impossibile inizializzare lo stack");
-        exit(EXIT_FAILURE);
-    };
+    if (s == NULL) return;
     s->top = 0;
 }
 
-void stack_push(Stack *s, Tensor *t) {
-    if (s == NULL) return;
-    
+void stack_push_tensor(Stack *s, Tensor *t) {
+    if (s == NULL || t == NULL) return;
     if (s->top >= STACK_MAX_SIZE) {
         fprintf(stderr, "Errore Fatale: Stack Overflow.\n");
         exit(EXIT_FAILURE);
     }
     
-    s->items[s->top] = t;
+    s->items[s->top].type = ITEM_TENSOR;
+    s->items[s->top].data.tensor = t;
     s->top++;
 }
 
-Tensor* stack_pop(Stack *s) {
-    if (s == NULL) return NULL;
+void stack_push_string(Stack *s, const char *str) {
+    if (s == NULL || str == NULL) return;
+    if (s->top >= STACK_MAX_SIZE) {
+        fprintf(stderr, "Errore Fatale: Stack Overflow.\n");
+        exit(EXIT_FAILURE);
+    }
     
-    if (s->top <= 0) {
-        fprintf(stderr, "Errore di esecuzione: Stack Underflow.\n");
-        exit(EXIT_FAILURE); 
+    s->items[s->top].type = ITEM_STRING;
+    s->items[s->top].data.string = strdup(str);
+    
+    if (s->items[s->top].data.string == NULL) {
+        perror("Errore memoria stringa");
+        exit(EXIT_FAILURE);
+    }
+    s->top++;
+}
+
+Tensor* stack_pop_tensor(Stack *s) {
+    if (s == NULL || s->top <= 0) {
+        fprintf(stderr, "Errore: Stack vuoto. Impossibile estrarre operando.\n");
+        exit(EXIT_FAILURE);
     }
     
     s->top--;
-    return s->items[s->top];
-}
-
-Tensor* stack_peek(Stack *s) {
-    if (s == NULL || s->top <= 0) {
-        fprintf(stderr, "Errore di esecuzione: Stack vuoto (peek).\n");
+    StackItem item = s->items[s->top];
+    
+    if (item.type != ITEM_TENSOR) {
+        fprintf(stderr, "Errore di Tipo: Atteso un Tensore, trovato un Nome File.\n");
         exit(EXIT_FAILURE);
     }
-    return s->items[s->top - 1];
+    
+    return item.data.tensor;
+}
+
+char* stack_pop_string(Stack *s) {
+    if (s == NULL || s->top <= 0) {
+        fprintf(stderr, "Errore: Stack vuoto. Impossibile estrarre stringa.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    s->top--;
+    StackItem item = s->items[s->top];
+    
+    if (item.type != ITEM_STRING) {
+        fprintf(stderr, "Errore di Tipo: Atteso un Nome File, trovato un Tensore.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    return item.data.string;
+}
+
+Tensor* stack_peek_tensor(Stack *s) {
+    if (s == NULL || s->top <= 0) {
+        fprintf(stderr, "Errore: Stack vuoto (peek).\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    StackItem item = s->items[s->top - 1];
+    if (item.type != ITEM_TENSOR) {
+        fprintf(stderr, "Errore di Tipo: Peek attende un Tensore.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    return item.data.tensor;
 }
 
 void stack_cleanup(Stack *s) {
     if (s == NULL) return;
     
     while (s->top > 0) {
-        Tensor *t = stack_pop(s);
-        tensor_free(t);
+        s->top--;
+        StackItem item = s->items[s->top];
+        
+        if (item.type == ITEM_TENSOR) {
+            tensor_free(item.data.tensor);
+        } else if (item.type == ITEM_STRING) {
+            free(item.data.string); 
+        }
     }
 }

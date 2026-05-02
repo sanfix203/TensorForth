@@ -22,7 +22,7 @@ typedef struct {
 } Tensor;
 
 // Creazione tensore e aumento dei reference
-Tensor* create (int32_t dim, int32_t shape);
+Tensor* tensor_create (int32_t dim, int32_t *shape);
 
 // aggiornamento numero di riferimenti al tensore
 Tensor* tensor_reference(Tensor *t);

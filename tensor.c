@@ -16,7 +16,7 @@ size_t tensor_get_num_elements(int32_t n_dim, const int32_t *shape) {
     return total_elements;
 }
 
-Tensor* tensor_create(int32_t n_dim, const int32_t *shape) {
+Tensor* tensor_create(int32_t n_dim, int32_t *shape) {
     // Controllo dimensioni
     if (n_dim <= 0 || n_dim > MAX_DIM || shape == NULL) {
         fprintf(stderr, "Errore: Dimensioni non valide per la creazione del tensore.\n");
@@ -27,14 +27,14 @@ Tensor* tensor_create(int32_t n_dim, const int32_t *shape) {
     Tensor *t = (Tensor*)malloc(sizeof(Tensor));
     if (t == NULL) {
         perror("Errore di allocazione memoria per Tensor");
-        // ! exit(EXIT_FAILURE); // Le specifiche richiedono exit code != 0 in caso di errore
+        exit(EXIT_FAILURE);
     }
 
     TensorBuffer *buf = (TensorBuffer*)malloc(sizeof(TensorBuffer));
     if (buf == NULL) {
         perror("Errore di allocazione memoria per TensorBuffer");
         free(t);
-        // ! exit(EXIT_FAILURE); // Le specifiche richiedono exit code != 0 in caso di errore
+        exit(EXIT_FAILURE);
     }
 
     // Allocazioni elementi
@@ -44,7 +44,7 @@ Tensor* tensor_create(int32_t n_dim, const int32_t *shape) {
         perror("Errore di allocazione memoria per i dati del tensore");
         free(buf);
         free(t);
-        // ! exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     // Inizializzazione valori
@@ -69,7 +69,7 @@ Tensor* tensor_reference(Tensor *t) {
     Tensor *new_t = (Tensor*)malloc(sizeof(Tensor));
     if (new_t == NULL) {
         perror("Errore di allocazione memoria per Tensor (reference)");
-        // ! exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     new_t->n_dim = t->n_dim;

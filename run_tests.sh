@@ -66,15 +66,23 @@ run_test "Sottrazione vettoriale" "[ 10 20 30 ] [ 1 2 3 ] - p" 0 "Tensor (shape=
 run_test "Moltiplicazione vettoriale" "[ 1 2 3 ] [ 4 5 6 ] * p" 0 "Tensor (shape=[3], data=[4 10 18])"
 
 # Operazioni di comparazione
-run_test "Maggiore" "[ 10 10 10 ] [ 5 10 15 ] > p" 0 "Tensor (shape=[3], data=[1 0 0])"
+run_test "Maggiore" "[ 10 10 10 ] [ 5 10 15 ] > p" 0 "Tensor (shape=[3], data=[0 0 1])"
 run_test "Uguale" "[ 10 10 10 ] [ 5 10 15 ] = p" 0 "Tensor (shape=[3], data=[0 1 0])"
-run_test "Minore" "[ 10 10 10 ] [ 5 10 15 ] < p" 0 "Tensor (shape=[3], data=[0 0 1])"
+run_test "Minore" "[ 10 10 10 ] [ 5 10 15 ] < p" 0 "Tensor (shape=[3], data=[1 0 0])"
 
 # Operazioni logiche
 run_test "And" "[ 0 1 0 1 ] [ 0 0 1 1 ] & p" 0 "Tensor (shape=[4], data=[0 0 0 1])"
 run_test "Or" "[ 0 1 0 1 ] [ 0 0 1 1 ] | p" 0 "Tensor (shape=[4], data=[0 1 1 1])"
 run_test "Not" "[ 0 1 ] ! p" 0 "Tensor (shape=[2], data=[1 0])"
 
+# Operazioni di selezione
+run_test "Selezione" "[ 5 6 7 8 ] [ 1 2 3 4 ] [ 1 1 0 0 ] $ p" 0 "Tensor (shape=[4], data=[1 2 7 8])"
+
+# Operazioni sulla forma dei tensori
+run_test "Reshape" "[ 1 2 3 4 ] [ 2 2 ] r p" 0 "Tensor (shape=[2 2], data=[1 2 3 4])"
+run_test "Ravel" "[ 1 2 3 4 ] [ 2 2 ] r _ p" 0 "Tensor (shape=[4], data=[1 2 3 4])"
+run_test "Shape 1D" "[ 1 2 3 4 ] # p" 0 "Tensor (shape=[1], data=[4])"
+run_test "Shape 2D" "[ 1 2 3 4 5 6 ] [ 3 2 ] r # p" 0 "Tensor (shape=[2], data=[3 2])"
 
 echo -e "\n--- TEST NEGATIVI (Error Handling) ---"
 run_test "Errore Sintassi: Tensore non chiuso" "[ 1 2 3 " 1 "Errore di sintassi"
@@ -87,6 +95,8 @@ run_test "Errore Tipo: Somma con stringa" "[ 1 2 ] \"file.txt\" +" 1 "Errore di 
 run_test "Errore Esecuzione: Dimensioni diverse" "[ 1 2 ] [ 1 2 3 ] +" 1 "shape diversa"
 run_test "Errore Stack: Pop da stack vuoto" "+" 1 "Stack vuoto"
 run_test "Errore Logico: Valori non booleani" "[ 1 2 0 ] [ 1 0 0 ] &" 1 "richiedono tensori composti solo da 0.0 e 1.0"
+run_test "Errore Esecuzione: Reshape con forma incorretta" "[ 1 2 3 4 ] [ 1 2 ] r" 1 "non coincide con la nuova forma"
+
 
 echo -e "\n--- RISULTATI ---"
 echo -e "Passati: ${GREEN}$PASSED${NC}"

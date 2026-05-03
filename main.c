@@ -148,8 +148,8 @@ int main(int argc, char *argv[]) {
                     break;}
                 case '>':{
                     DEBUG_PRINT("operatore '%c'\n", op);
-                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_greater(a, b);
 
                     stack_push_tensor(&stack, result);
@@ -164,8 +164,8 @@ int main(int argc, char *argv[]) {
                     break;}
                 case '<':{
                     DEBUG_PRINT("operatore '%c'\n", op);
-                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_less(a, b);
 
                     stack_push_tensor(&stack, result);
@@ -189,6 +189,39 @@ int main(int argc, char *argv[]) {
                     Tensor *result = tensor_not(a);
 
                     stack_push_tensor(&stack, result);
+                    break;}
+                case '$': {
+                    Tensor *m = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_select(m, a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case 'r': {
+                    Tensor* s = stack_pop_tensor(&stack);
+                    Tensor* a = stack_pop_tensor(&stack);
+                    Tensor* result = tensor_reshape(a, s);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '_': {
+                    Tensor *t = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_ravel(t);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '#': {
+                    Tensor *t = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_shape(t);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '@':{
+                    Tensor* a = stack_pop_tensor(&stack);
+                    Tensor* b = stack_pop_tensor(&stack);
+                    
+                    Tensor* result = tensor_matrix_prod(a, b);
                     break;}
                 case 'd':
                     DEBUG_PRINT("operatore '%c' (dup)\n", op);

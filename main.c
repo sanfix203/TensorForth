@@ -39,27 +39,49 @@ int main(int argc, char *argv[]) {
 
         // * Caso A: inizio tensore
         if (ch == '[') {
-            float temp_values[10000]; // Buffer temporaneo per i numeri
+            // Controllo 1: spazio obbligatorio DOPO '['
+            int next_ch = fgetc(file);
+            if (!isspace(next_ch)) {
+                fprintf(stderr, "Errore di sintassi: Spazio obbligatorio\n");
+                exit(EXIT_FAILURE);
+            }
+            ungetc(next_ch, file); 
+
+            float temp_values[10000];
             int count = 0;
+            
+            int last_was_space = 1; 
             
             // Continua a leggere finché non trovi la chiusura del tensore
             while (1) {
                 ch = fgetc(file);
-                if (ch == ']') break;
+                
+                if (ch == ']') {
+                    // Controllo 2: spazio obbligatorio PRIMA di ']'
+                    if (!last_was_space) {
+                        fprintf(stderr, "Errore di sintassi: Spazio obbligatorio\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    break;
+                }
+                
                 if (ch == EOF) {
-                    fprintf(stderr, "Errore di sintassi: File terminato inaspettatamente. Manca ']'.\n");
+                    fprintf(stderr, "Errore di sintassi: File terminato inaspettatamente.\n");
                     exit(EXIT_FAILURE);
                 }
-                if (isspace(ch)) continue;
+                
+                if (isspace(ch)) {
+                    last_was_space = 1;
+                    continue;
+                }
 
-                // Remissione del carattere nello stream per farlo leggere a fscanf
+                last_was_space = 0; 
                 ungetc(ch, file); 
                 
                 float val;
                 if (fscanf(file, "%f", &val) == 1) {
                     temp_values[count++] = val;
                 } else {
-                    // Non è un float
                     fprintf(stderr, "Errore di sintassi: valore non numerico nel tensore.\n");
                     exit(EXIT_FAILURE);
                 }
@@ -72,9 +94,7 @@ int main(int argc, char *argv[]) {
             }
             stack_push_tensor(&stack, t);
             DEBUG_PRINT("Letto tensore con %d elementi.\n", count);
-        }
-        
-        // * Caso B: Inizio di una stringa 
+        } // * Caso B: Inizio di una stringa 
         else if (ch == '"') {
             char filename[MAX_BUFFER_SIZE];
             int i = 0;
@@ -97,9 +117,7 @@ int main(int argc, char *argv[]) {
             
             stack_push_string(&stack, filename);
             DEBUG_PRINT("Inserito filename nello stack: '%s'\n", filename);
-        }
-        
-        // * Caso C: operatore
+        } // * Caso C: operatore
         else {
             char op = (char)ch;
             
@@ -125,6 +143,50 @@ int main(int argc, char *argv[]) {
                     Tensor *b = stack_pop_tensor(&stack);
                     Tensor *a = stack_pop_tensor(&stack);
                     Tensor *result = tensor_mul(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '>':{
+                    DEBUG_PRINT("operatore '%c'\n", op);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_greater(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '=':{
+                    DEBUG_PRINT("operatore '%c'\n", op);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_equal(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '<':{
+                    DEBUG_PRINT("operatore '%c'\n", op);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_less(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '&': {
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_and(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '|': {
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_or(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '!': {
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_not(a);
 
                     stack_push_tensor(&stack, result);
                     break;}

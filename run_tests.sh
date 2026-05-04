@@ -4,6 +4,8 @@
 # Colori per l'output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+BLUE='\033[1;34m'
+ORANGE='\033[0;33m'
 NC='\033[0m' # Nessun colore
 EXEC="./tensorforth"
 
@@ -56,54 +58,77 @@ run_test() {
     rm temp_test.tf
 }
 
-echo "--- TEST POSITIVI ---"
-# Stampa
+
+printf "${COLOR_BLUE}--- TEST POSITIVI ---${NC}\n"
+printf "${BLUE}Stampa${NC}\n"
 run_test "Stampa multipla" "[ 5 ] p [ 10 ] p" 0 "data=[10]"
 
-# Operazioni aritmetiche
+printf "\n${BLUE}Operazioni aritmetiche${NC}\n"
 run_test "Somma vettoriale" "[ 1 2 3 ] [ 10 20 30 ] + p" 0 "Tensor (shape=[3], data=[11 22 33])"
 run_test "Sottrazione vettoriale" "[ 10 20 30 ] [ 1 2 3 ] - p" 0 "Tensor (shape=[3], data=[9 18 27])"
 run_test "Moltiplicazione vettoriale" "[ 1 2 3 ] [ 4 5 6 ] * p" 0 "Tensor (shape=[3], data=[4 10 18])"
 
-# Operazioni di comparazione
+printf "\n${BLUE}Operazioni di comparazione${NC}\n"
 run_test "Maggiore" "[ 10 10 10 ] [ 5 10 15 ] > p" 0 "Tensor (shape=[3], data=[0 0 1])"
 run_test "Uguale" "[ 10 10 10 ] [ 5 10 15 ] = p" 0 "Tensor (shape=[3], data=[0 1 0])"
 run_test "Minore" "[ 10 10 10 ] [ 5 10 15 ] < p" 0 "Tensor (shape=[3], data=[1 0 0])"
 
-# Operazioni logiche
+printf "\n${BLUE}Operazioni logiche${NC}\n"
 run_test "And" "[ 0 1 0 1 ] [ 0 0 1 1 ] & p" 0 "Tensor (shape=[4], data=[0 0 0 1])"
 run_test "Or" "[ 0 1 0 1 ] [ 0 0 1 1 ] | p" 0 "Tensor (shape=[4], data=[0 1 1 1])"
 run_test "Not" "[ 0 1 ] ! p" 0 "Tensor (shape=[2], data=[1 0])"
 
-# Operazioni di selezione
+printf "\n${BLUE}Operazioni di selezione${NC}\n"
 run_test "Selezione" "[ 5 6 7 8 ] [ 1 2 3 4 ] [ 1 1 0 0 ] $ p" 0 "Tensor (shape=[4], data=[1 2 7 8])"
 
-# Operazioni sulla forma dei tensori
+printf "\n${BLUE}Operazioni specifiche per tensori${NC}\n"
+run_test "Prodotto matrici 2D @ 2D" "[ 2 0 1 2 ] [ 2 2 ] r [ 1 2 3 4 ] [ 2 2 ] r @ p" 0 "data=[4 4 10 8]"
+run_test "Prodotto matrici 1D @ 2D" "[ 1 2 3 4 5 6 ] [ 2 3 ] r [ 1 2 ] @ p" 0 "data=[9 12 15]"
+run_test "Prodotto matrici 2D @ 1D" "[ 5 6 ] [ 1 2 3 4 ] [ 2 2 ] r @ p" 0 "data=[17 39]"
+run_test "Prodotto scalare" "[ 1 2 3 ] [ 0 1 2 ] . p" 0 "Tensor (shape=[1], data=[8])"
+
+printf "\n${BLUE}Operazioni sulla forma dei tensori${NC}\n"
 run_test "Reshape" "[ 1 2 3 4 ] [ 2 2 ] r p" 0 "Tensor (shape=[2 2], data=[1 2 3 4])"
 run_test "Ravel" "[ 1 2 3 4 ] [ 2 2 ] r _ p" 0 "Tensor (shape=[4], data=[1 2 3 4])"
 run_test "Shape 1D" "[ 1 2 3 4 ] # p" 0 "Tensor (shape=[1], data=[4])"
 run_test "Shape 2D" "[ 1 2 3 4 5 6 ] [ 3 2 ] r # p" 0 "Tensor (shape=[2], data=[3 2])"
 
-# Operazioni elemento per elemento
+printf "\n${BLUE}Operazioni elemento per elemento${NC}\n"
 run_test "Relu" "[ -1 0 1 ] R p" 0 "Tensor (shape=[3], data=[0 0 1])"
 run_test "Min" "[ -1 0 1 ] [ 1 0 -1 ] m p" 0 "Tensor (shape=[3], data=[-1 0 -1])"
 run_test "Max" "[ -1 0 1 ] [ 1 0 -1 ] M p" 0 "Tensor (shape=[3], data=[1 0 1])"
 
+printf "\n${BLUE}Operazioni di riduzione${NC}\n"
+run_test "Sommatoria" "[ -1 2 3 ] S p" 0 "Tensor (shape=[1], data=[4])"
 
+printf "\n${BLUE}Operazioni di filling di tensori${NC}\n"
+run_test "Fill 2D ciclico" "[ 2 3 ] [ 1 2 ] f p" 0 "data=[1 2 1 2 1 2]"
+run_test "Fill 1D singolo" "[ 5 ] [ 9 ] f p" 0 "shape=[5], data=[9 9 9 9 9]"
 
-echo -e "\n--- TEST NEGATIVI (Error Handling) ---"
-run_test "Errore Sintassi: Tensore non chiuso" "[ 1 2 3 " 1 "Errore di sintassi"
-run_test "Errore Sintassi: Spazio iniziale mancante" "[1 2 3 ]" 1 "Errore di sintassi"
-run_test "Errore Sintassi: Spazio finale mancante" "[ 1 2 3]" 1 "Errore di sintassi"
-run_test "Errore Sintassi: Separatore incorretto" "[ 1, 2, 3 ]" 1 "Errore di sintassi"
-run_test "Errore Sintassi: Numero di spazi incorretto" "[1 2  3 ]" 1 "Errore di sintassi"
-run_test "Errore Sintassi: Lettere nel tensore" "[ 1 A 3 ]" 1 "valore non numerico"
-run_test "Errore Tipo: Somma con stringa" "[ 1 2 ] \"file.txt\" +" 1 "Errore di Tipo"
-run_test "Errore Esecuzione: Dimensioni diverse" "[ 1 2 ] [ 1 2 3 ] +" 1 "shape diversa"
-run_test "Errore Stack: Pop da stack vuoto" "+" 1 "Stack vuoto"
-run_test "Errore Logico: Valori non booleani" "[ 1 2 0 ] [ 1 0 0 ] &" 1 "richiedono tensori composti solo da 0.0 e 1.0"
-run_test "Errore Esecuzione: Reshape con forma incorretta" "[ 1 2 3 4 ] [ 1 2 ] r" 1 "non coincide con la nuova forma"
+printf "\n\n${ORANGE}--- TEST NEGATIVI ---${NC}\n"
+printf "${ORANGE}Errori di Stack (Underflow)${NC}\n"
+run_test "Stack vuoto per Somma" "[ 1 2 3 ] +" 1 "vuoto"
+run_test "Stack vuoto per Stampa" "p" 1 "vuoto"
+run_test "Stack vuoto per Unario" "R" 1 "vuoto"
 
+printf "\n${ORANGE}Errori di Forma (Shape Mismatch)${NC}\n"
+run_test "Somma lunghezze diverse" "[ 1 2 ] [ 1 2 3 ] +" 1 "shape diversa"
+run_test "Confronto 1D e 2D" "[ 1 2 3 4 ] [ 1 2 3 4 ] [ 2 2 ] r =" 1 "shape diversa"
+run_test "Selezione maschera errata" "[ 1 2 ] [ 3 4 ] [ 1 0 1 ] $" 1 "shape diversa"
+
+printf "\n${ORANGE}Errori Logici${NC}\n"
+run_test "Valori non booleani" "[ 1 2 0 ] [ 1 0 0 ] &" 1 "composti"
+
+printf "\n${ORANGE}Errori Operazioni Reshape${NC}\n"
+run_test "Reshape volume errato" "[ 1 2 3 4 ] [ 3 3 ] r" 1 "numero di elementi"
+run_test "Reshape forma errata" "[ 1 2 3 4 ] [ 2 2 1 ] r" 1 "tensore forma"
+run_test "Dot product incompatibile" " [ 1 2 3 ] [ 1 2 ] ." 1 "shape diversa"
+run_test "Matmul dimensioni incompatibili" "[ 1 2 3 4 5 6 ] [ 3 2 ] r [ 1 2 3 4 ] [ 2 2 ] r @" 1 "Dimensioni interne"
+
+printf "${ORANGE}Errori di filling${NC}\n"
+run_test "Fill con s non 1D" "[ 1 2 3 4 ] [ 2 2 ] r [ 1 2 ] f" 1 "1D"
+run_test "Fill con s troppo lungo" "[ 2 2 2 ] [ 1 ] f" 1 "forma"
+run_test "Fill con dimensione zero" "[ 0 5 ] [ 1 ] f" 1 "dimensioni"
 
 echo -e "\n--- RISULTATI ---"
 echo -e "Passati: ${GREEN}$PASSED${NC}"

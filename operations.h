@@ -19,6 +19,7 @@ Tensor* tensor_not(Tensor *a);
 Tensor* tensor_select(Tensor* m, Tensor* a, Tensor* b);
 
 Tensor* tensor_matrix_prod(Tensor* a, Tensor* b);
+Tensor* tensor_dot_prod(Tensor* a, Tensor* b);
 
 Tensor* tensor_reshape(Tensor* a, Tensor* s);
 Tensor* tensor_ravel(Tensor* t);
@@ -28,6 +29,9 @@ Tensor* tensor_relu(Tensor* t);
 Tensor* tensor_min(Tensor* a, Tensor* b);
 Tensor* tensor_max(Tensor* a, Tensor* b);
 
+Tensor* tensor_sum(Tensor* t);
+
+Tensor* tensor_fill(Tensor* s, Tensor* v);
 
 void tensor_print(Tensor *t);
 

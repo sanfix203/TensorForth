@@ -237,11 +237,33 @@ int main(int argc, char *argv[]) {
 
                     stack_push_tensor(&stack, result);
                     break;}
+                case 'S': {
+                    Tensor *t = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_sum(t);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
                 case '@':{
                     Tensor* a = stack_pop_tensor(&stack);
                     Tensor* b = stack_pop_tensor(&stack);
-                    
                     Tensor* result = tensor_matrix_prod(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case '.':{
+                    Tensor* a = stack_pop_tensor(&stack);
+                    Tensor* b = stack_pop_tensor(&stack);
+                    Tensor* result = tensor_dot_prod(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case 'f': {
+                    Tensor *v = stack_pop_tensor(&stack); // L'ultimo in cima: valori
+                    Tensor *s = stack_pop_tensor(&stack); // Il penultimo: forma
+                    
+                    Tensor *result = tensor_fill(s, v);
+                    stack_push_tensor(&stack, result);
+
                     break;}
                 case 'd':
                     DEBUG_PRINT("operatore '%c' (dup)\n", op);
@@ -262,7 +284,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Pulizia finale
     stack_cleanup(&stack);
     fclose(file);
     return 0;

@@ -217,33 +217,112 @@ Tensor* tensor_select(Tensor* m, Tensor* a, Tensor* b){
 }
 
 // Operazioni specifiche
-// TODO
 Tensor* tensor_matrix_prod(Tensor *a, Tensor *b){
-    // Controllo
+    // Vengono distinti i vari casi a seconda delle dimensioni dei tensori
     if (a == NULL || b == NULL) return NULL;
-    if (a->n_dim != 2 || b->n_dim != 2) {
-        fprintf(stderr, "Errore di esecuzione: I tensori devono avere dimensione 2.\n");
+
+    // Caso 1: matrice x matrice
+    if (a->n_dim == 2 && b->n_dim == 2) {
+        int M = a->shape[0];
+        int N1 = a->shape[1];
+        int N2 = b->shape[0];
+        int P = b->shape[1];
+
+        if (N1 != N2) {
+            fprintf(stderr, "Errore di esecuzione: Dimensioni interne incompatibili per @ (%dx%d e %dx%d).\n", M, N1, N2, P);
+            exit(EXIT_FAILURE);
+        }
+
+        int32_t res_shape[2] = {M, P};
+        Tensor *result = tensor_create(2, res_shape);
+
+        #pragma omp parallel for
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < P; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < N1; k++) {
+                    float val_a = a->tensor_buffer->data[i * N1 + k];
+                    float val_b = b->tensor_buffer->data[k * P + j];
+                    sum += val_a * val_b;
+                }
+                result->tensor_buffer->data[i * P + j] = sum;
+            }
+        }
+        return result;
+    }
+
+    // Caso 2: vettore colonna x vettore riga
+    if (a->n_dim == 2 && b->n_dim == 1) {
+        int M = a->shape[0];
+        int N = a->shape[1];
+        
+        if (N != b->shape[0]) {
+            fprintf(stderr, "Errore: Dimensioni incompatibili per 2D@1D (%dx%d e %d).\n", M, N, b->shape[0]);
+            exit(EXIT_FAILURE);
+        }
+
+        int32_t res_shape[1] = {M};
+        Tensor *result = tensor_create(1, res_shape);
+
+        #pragma omp parallel for
+        for (int i = 0; i < M; i++) {
+            float sum = 0.0f;
+            for (int k = 0; k < N; k++) {
+                sum += a->tensor_buffer->data[i * N + k] * b->tensor_buffer->data[k];
+            }
+            result->tensor_buffer->data[i] = sum;
+        }
+        return result;
+    }
+
+    // Caso 3: vettore riga x vettore colonna
+    if (a->n_dim == 1 && b->n_dim == 2) {
+        int N = a->shape[0];
+        int P = b->shape[1];
+        
+        if (N != b->shape[0]) {
+            fprintf(stderr, "Errore: Dimensioni incompatibili per 1D@2D (%d e %dx%d).\n", N, b->shape[0], P);
+            exit(EXIT_FAILURE);
+        }
+
+        int32_t res_shape[1] = {P};
+        Tensor *result = tensor_create(1, res_shape);
+
+        #pragma omp parallel for
+        for (int j = 0; j < P; j++) {
+            float sum = 0.0f;
+            for (int k = 0; k < N; k++) {
+                sum += a->tensor_buffer->data[k] * b->tensor_buffer->data[k * P + j];
+            }
+            result->tensor_buffer->data[j] = sum;
+        }
+        return result;
+    }
+    return NULL;
+}
+
+Tensor* tensor_dot_prod(Tensor* a, Tensor* b){
+    if (a==NULL || b==NULL) return NULL;
+    if (!tensor_have_same_shape(a, b)){
+        fprintf(stderr, "Errore di esecuzione: Impossibile eseguire l'operazione con tensori con shape diversa.\n");
         exit(EXIT_FAILURE);
+    }
+    if (a->n_dim!=1){
+        fprintf(stderr, "Errore di esecuzione: Operazione definita per tensori ad una dimensione\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int32_t res_shape[1] = {1}; // Il risultato è uno scalare (un singolo numero)
+    Tensor *result = tensor_create(1, res_shape);
+    
+    float dot_sum = 0.0f;
+    
+    #pragma omp parallel for reduction(+:dot_sum)
+    for (int i = 0; i < a->shape[0]; i++) {
+        dot_sum += a->tensor_buffer->data[i] * b->tensor_buffer->data[i];
     }
     
-    if (a->shape[1] != b->shape[0]) {
-        fprintf(stderr, "Errore di esecuzione: Impossibile eseguire l'operazione con matrici di queste dimensioni.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    size_t num_elements = tensor_get_num_elements(a->n_dim, a->shape);
-    check_boolean_tensor(a, num_elements);
-    check_boolean_tensor(b, num_elements);
-
-    // Operazione
-    int32_t shape[2] = {a->shape[0], b->shape[1]};
-    Tensor *result = tensor_create(2, shape);
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < num_elements; i++) {
-        
-    }
-
+    result->tensor_buffer->data[0] = dot_sum;
     return result;
 }
 
@@ -376,7 +455,81 @@ Tensor* tensor_max(Tensor* a, Tensor* b){
     return result;
 }
 
-// Utils
+// Operazioni di riduzione
+Tensor* tensor_sum(Tensor* t){
+    if (t == NULL) return NULL;
+
+    int32_t res_shape[1] = {1};
+    Tensor* result = tensor_create(1, res_shape);
+    if (result == NULL) {
+        fprintf(stderr, "Errore: Allocazione fallita in tensor_sum.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t num_elements = tensor_get_num_elements(t->n_dim, t->shape);
+    
+    float total_sum = 0.0f;
+    #pragma omp parallel for reduction(+:total_sum)
+    for (size_t i = 0; i < num_elements; i++) {
+        total_sum += t->tensor_buffer->data[i];
+    }
+
+    result->tensor_buffer->data[0] = total_sum;
+
+    return result;
+}
+
+// Operazioni di filling di tensori
+Tensor* tensor_fill(Tensor* s, Tensor* v){
+    if (s == NULL || v == NULL) return NULL;
+
+    if (s->n_dim != 1) {
+        fprintf(stderr, "Errore di esecuzione: Il tensore forma (s) deve essere 1D.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    int len_s = s->shape[0]; 
+    if (len_s < 1 || len_s > 2) {
+        fprintf(stderr, "Errore di esecuzione: Il tensore forma (s) deve avere 1 o 2 elementi.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t v_elements = tensor_get_num_elements(v->n_dim, v->shape);
+    if (v_elements == 0) {
+        fprintf(stderr, "Errore di esecuzione: Il tensore valori (v) è vuoto.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int32_t new_n_dim = len_s;
+    int32_t new_shape[2] = {0, 0};
+    
+    new_shape[0] = (int32_t)s->tensor_buffer->data[0];
+    if (len_s == 2) {
+        new_shape[1] = (int32_t)s->tensor_buffer->data[1];
+    }
+
+    if (new_shape[0] <= 0 || (len_s == 2 && new_shape[1] <= 0)) {
+        fprintf(stderr, "Errore di esecuzione: Le dimensioni per il fill devono essere > 0.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    Tensor* result = tensor_create(new_n_dim, new_shape);
+    if (result == NULL) {
+        fprintf(stderr, "Errore di esecuzione: Fallita allocazione per tensor_fill.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t res_elements = tensor_get_num_elements(new_n_dim, new_shape);
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < res_elements; i++) {
+        result->tensor_buffer->data[i] = v->tensor_buffer->data[i % v_elements];
+    }
+
+    return result;
+}
+
+// Operazioni di utilità
 void tensor_print(Tensor *t){
     // Controllo
     if (t==NULL) return;

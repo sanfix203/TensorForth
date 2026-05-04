@@ -24,6 +24,11 @@ Tensor* tensor_reshape(Tensor* a, Tensor* s);
 Tensor* tensor_ravel(Tensor* t);
 Tensor* tensor_shape(Tensor* t);
 
+Tensor* tensor_relu(Tensor* t);
+Tensor* tensor_min(Tensor* a, Tensor* b);
+Tensor* tensor_max(Tensor* a, Tensor* b);
+
+
 void tensor_print(Tensor *t);
 
 #endif

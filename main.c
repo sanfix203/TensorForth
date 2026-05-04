@@ -217,6 +217,26 @@ int main(int argc, char *argv[]) {
 
                     stack_push_tensor(&stack, result);
                     break;}
+                case 'R': {
+                    Tensor *t = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_relu(t);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case 'm': {
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_min(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
+                case 'M': {
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_max(a, b);
+
+                    stack_push_tensor(&stack, result);
+                    break;}
                 case '@':{
                     Tensor* a = stack_pop_tensor(&stack);
                     Tensor* b = stack_pop_tensor(&stack);

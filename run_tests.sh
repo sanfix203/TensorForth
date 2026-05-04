@@ -84,6 +84,13 @@ run_test "Ravel" "[ 1 2 3 4 ] [ 2 2 ] r _ p" 0 "Tensor (shape=[4], data=[1 2 3 4
 run_test "Shape 1D" "[ 1 2 3 4 ] # p" 0 "Tensor (shape=[1], data=[4])"
 run_test "Shape 2D" "[ 1 2 3 4 5 6 ] [ 3 2 ] r # p" 0 "Tensor (shape=[2], data=[3 2])"
 
+# Operazioni elemento per elemento
+run_test "Relu" "[ -1 0 1 ] R p" 0 "Tensor (shape=[3], data=[0 0 1])"
+run_test "Min" "[ -1 0 1 ] [ 1 0 -1 ] m p" 0 "Tensor (shape=[3], data=[-1 0 -1])"
+run_test "Max" "[ -1 0 1 ] [ 1 0 -1 ] M p" 0 "Tensor (shape=[3], data=[1 0 1])"
+
+
+
 echo -e "\n--- TEST NEGATIVI (Error Handling) ---"
 run_test "Errore Sintassi: Tensore non chiuso" "[ 1 2 3 " 1 "Errore di sintassi"
 run_test "Errore Sintassi: Spazio iniziale mancante" "[1 2 3 ]" 1 "Errore di sintassi"

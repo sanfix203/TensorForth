@@ -1,11 +1,10 @@
 // Gabriele Sanfilippo SM3201618
 
-// TODO: EXIT_FAILURE
-
 #include "tensor.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 
 size_t tensor_get_num_elements(int32_t n_dim, const int32_t *shape) {
     if (n_dim <= 0 || n_dim > MAX_DIM) 
@@ -49,7 +48,9 @@ Tensor* tensor_create(int32_t n_dim, int32_t *shape) {
 
     // Inizializzazione valori
     buf->ref_count = 1; 
-    
+    buf->mmap_ptr = NULL; // <-- AGGIUNGI QUESTO
+    buf->mmap_size = 0;   // <-- AGGIUNGI QUESTO
+
     t->n_dim = n_dim;
     t->tensor_buffer = buf;
     
@@ -86,15 +87,17 @@ Tensor* tensor_reference(Tensor *t) {
 void tensor_free(Tensor *t) {
     if (t == NULL) return;
 
-    // Decremento reference count
-    if (t->tensor_buffer != NULL) {
-        t->tensor_buffer->ref_count--;
+    t->tensor_buffer->ref_count--;
 
-        if (t->tensor_buffer->ref_count == 0) {
-            free(t->tensor_buffer->data);
+    if (t->tensor_buffer->ref_count == 0) {
+            if (t->tensor_buffer->mmap_ptr != NULL) {
+                munmap(t->tensor_buffer->mmap_ptr, t->tensor_buffer->mmap_size);
+            } 
+            else if (t->tensor_buffer->data != NULL) {
+                free(t->tensor_buffer->data);
+            }
             free(t->tensor_buffer);
         }
-    }
-
+    
     free(t);
 }

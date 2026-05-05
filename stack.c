@@ -11,31 +11,35 @@ void stack_init(Stack *s) {
 }
 
 void stack_push_tensor(Stack *s, Tensor *t) {
-    if (s == NULL || t == NULL) return;
+    if (s == NULL) return;
     if (s->top >= STACK_MAX_SIZE) {
-        fprintf(stderr, "Errore Fatale: Stack Overflow.\n");
+        fprintf(stderr, "Errore: Stack Overflow (Limite massimo: %d)\n", STACK_MAX_SIZE);
         exit(EXIT_FAILURE);
     }
     
     s->items[s->top].type = ITEM_TENSOR;
     s->items[s->top].data.tensor = t;
+    
     s->top++;
 }
 
-void stack_push_string(Stack *s, const char *str) {
+void stack_push_string(Stack *s, char *str) {
     if (s == NULL || str == NULL) return;
     if (s->top >= STACK_MAX_SIZE) {
-        fprintf(stderr, "Errore Fatale: Stack Overflow.\n");
+        fprintf(stderr, "Errore: Stack Overflow!\n");
         exit(EXIT_FAILURE);
     }
     
     s->items[s->top].type = ITEM_STRING;
-    s->items[s->top].data.string = strdup(str);
     
+    // Sostituiamo strdup con malloc e strcpy (Standard C sicuro)
+    s->items[s->top].data.string = (char *)malloc(strlen(str) + 1);
     if (s->items[s->top].data.string == NULL) {
-        perror("Errore memoria stringa");
+        fprintf(stderr, "Errore: Allocazione memoria fallita per la stringa.\n");
         exit(EXIT_FAILURE);
     }
+    strcpy(s->items[s->top].data.string, str);
+    
     s->top++;
 }
 
@@ -71,6 +75,15 @@ char* stack_pop_string(Stack *s) {
     }
     
     return item.data.string;
+}
+
+StackItem stack_pop(Stack *s) {
+    if (s->top <= 0) { 
+        fprintf(stderr, "Errore: Stack vuoto. Impossibile estrarre stringa.\n");
+        exit(EXIT_FAILURE); }
+
+    s->top--;
+    return s->items[s->top];
 }
 
 Tensor* stack_peek_tensor(Stack *s) {

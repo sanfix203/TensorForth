@@ -8,11 +8,14 @@
 #include "stack.h"
 #include "debug.h"
 #include "operations.h"
+#include <time.h> // per fornire il seed a rand()
 
 // Dimensione massima per il buffer di lettura temporaneo
-#define MAX_BUFFER_SIZE 2048
+#define MAX_BUFFER_SIZE 256
 
 int main(int argc, char *argv[]) {
+    srand(time(NULL));
+
     // Controllo degli argomenti 
     if (argc != 2) {
         fprintf(stderr, "Uso: %s [nome file sorgente]\n", argv[0]);
@@ -93,7 +96,6 @@ int main(int argc, char *argv[]) {
                 t->tensor_buffer->data[i] = temp_values[i];
             }
             stack_push_tensor(&stack, t);
-            DEBUG_PRINT("Letto tensore con %d elementi.\n", count);
         } // * Caso B: Inizio di una stringa 
         else if (ch == '"') {
             char filename[MAX_BUFFER_SIZE];
@@ -112,83 +114,100 @@ int main(int argc, char *argv[]) {
                 if (i < MAX_BUFFER_SIZE - 1) {
                     filename[i++] = (char)ch;
                 }
+                
             }
             filename[i] = '\0'; // Terminatore di stringa
-            
             stack_push_string(&stack, filename);
-            DEBUG_PRINT("Inserito filename nello stack: '%s'\n", filename);
         } // * Caso C: operatore
         else {
             char op = (char)ch;
-            
             switch(op) {
-                case '+':{
-                    DEBUG_PRINT("operatore '%c'\n", op);
-                    Tensor *b = stack_pop_tensor(&stack);
+                case '+': {
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_add(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
-                case '-':{
-                    DEBUG_PRINT("operatore '%c'\n", op);
-                    Tensor *b = stack_pop_tensor(&stack);
+                case '-': {
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_sub(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+                    
                     break;}
-                case '*':{
-                    DEBUG_PRINT("operatore '%c'\n", op);
-                    Tensor *b = stack_pop_tensor(&stack);
+                case '*': {
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_mul(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
-                case '>':{
-                    DEBUG_PRINT("operatore '%c'\n", op);
+                case '>': {
                     Tensor *a = stack_pop_tensor(&stack);
                     Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_greater(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
-                case '=':{
-                    DEBUG_PRINT("operatore '%c'\n", op);
+                case '=': {
                     Tensor *b = stack_pop_tensor(&stack);
                     Tensor *a = stack_pop_tensor(&stack);
                     Tensor *result = tensor_equal(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
-                case '<':{
-                    DEBUG_PRINT("operatore '%c'\n", op);
+                case '<': {
                     Tensor *a = stack_pop_tensor(&stack);
                     Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_less(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
                 case '&': {
-                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_and(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
                 case '|': {
-                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
                     Tensor *result = tensor_or(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
                 case '!': {
-                    Tensor *a = stack_pop_tensor(&stack);
-                    Tensor *result = tensor_not(a);
+                    Tensor *t = stack_pop_tensor(&stack);
+                    Tensor *result = tensor_not(t);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(t);
                     break;}
                 case '$': {
                     Tensor *m = stack_pop_tensor(&stack);
@@ -197,6 +216,9 @@ int main(int argc, char *argv[]) {
                     Tensor *result = tensor_select(m, a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(m);
+                    tensor_free(a);
+                    tensor_free(b);
                     break;}
                 case 'r': {
                     Tensor* s = stack_pop_tensor(&stack);
@@ -204,18 +226,24 @@ int main(int argc, char *argv[]) {
                     Tensor* result = tensor_reshape(a, s);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(s);
+                    tensor_free(a);
                     break;}
                 case '_': {
                     Tensor *t = stack_pop_tensor(&stack);
                     Tensor *result = tensor_ravel(t);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(t);
+
                     break;}
                 case '#': {
                     Tensor *t = stack_pop_tensor(&stack);
                     Tensor *result = tensor_shape(t);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(t);
+
                     break;}
                 case 'R': {
                     Tensor *t = stack_pop_tensor(&stack);
@@ -229,6 +257,9 @@ int main(int argc, char *argv[]) {
                     Tensor *result = tensor_min(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
                 case 'M': {
                     Tensor *a = stack_pop_tensor(&stack);
@@ -236,50 +267,131 @@ int main(int argc, char *argv[]) {
                     Tensor *result = tensor_max(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
                 case 'S': {
                     Tensor *t = stack_pop_tensor(&stack);
                     Tensor *result = tensor_sum(t);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(t);
+
                     break;}
-                case '@':{
+                case '@': {
                     Tensor* a = stack_pop_tensor(&stack);
                     Tensor* b = stack_pop_tensor(&stack);
                     Tensor* result = tensor_matrix_prod(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
-                case '.':{
+                case '.': {
                     Tensor* a = stack_pop_tensor(&stack);
                     Tensor* b = stack_pop_tensor(&stack);
                     Tensor* result = tensor_dot_prod(a, b);
 
                     stack_push_tensor(&stack, result);
+                    tensor_free(a);
+                    tensor_free(b);
+
                     break;}
+                case 'c': {
+                    Tensor *k = stack_pop_tensor(&stack); // L'ultimo entrato (kernel)
+                    Tensor *a = stack_pop_tensor(&stack); // Il penultimo (matrice input)
+                    
+                    Tensor *result = tensor_conv2d(a, k);
+                    stack_push_tensor(&stack, result);
+                    
+                    tensor_free(k);
+                    tensor_free(a);
+                    break;
+                }
                 case 'f': {
-                    Tensor *v = stack_pop_tensor(&stack); // L'ultimo in cima: valori
-                    Tensor *s = stack_pop_tensor(&stack); // Il penultimo: forma
+                    Tensor *v = stack_pop_tensor(&stack);
+                    Tensor *s = stack_pop_tensor(&stack);
                     
                     Tensor *result = tensor_fill(s, v);
                     stack_push_tensor(&stack, result);
 
+                    tensor_free(v);
+                    tensor_free(s);
+
                     break;}
-                case 'd':
-                    DEBUG_PRINT("operatore '%c' (dup)\n", op);
-                    // stack_push(&stack, tensor_reference(stack_peek(&stack)));
-                    break;
-                case 'p':{
-                    DEBUG_PRINT("operatore '%c' (print)\n", op);
+                case '?': {
+                    Tensor *s = stack_pop_tensor(&stack);
+                    
+                    Tensor *result = tensor_random(s);
+                    stack_push_tensor(&stack, result);
+
+                    tensor_free(s);
+                    break;}
+                case 'd': {
+                    Tensor *original = stack_pop_tensor(&stack);            
+                    Tensor *clone = tensor_duplicate(original);
+                    
+                    stack_push_tensor(&stack, original);
+                    stack_push_tensor(&stack, clone);
+                    
+                    break;}
+                case 's': {
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
+
+                    stack_push_tensor(&stack, a);
+                    stack_push_tensor(&stack, b);
+                    break;}
+                case 'o': {
+                    Tensor *a = stack_pop_tensor(&stack);
+                    Tensor *b = stack_pop_tensor(&stack);
+                    Tensor *b_2 = tensor_duplicate(b);
+
+                    stack_push_tensor(&stack, b);
+                    stack_push_tensor(&stack, a);
+                    stack_push_tensor(&stack, b_2);
+                    break;}
+                case 'D': {
+                    stack_pop_tensor(&stack);
+                    break;}
+                case 'p': {
                     Tensor *t = stack_pop_tensor(&stack);
                     tensor_print(t);
                     break;}
-  
-                // ecc
-                
-                default:
+                case '(': {
+                    char *filename = stack_pop_string(&stack);
+                    Tensor *img_tensor = tensor_load_pgm(filename);
+                    
+                    stack_push_tensor(&stack, img_tensor);
+                    free(filename);
+                    break;}
+                case ')': {
+                    char *filename = stack_pop_string(&stack);
+                    Tensor *img_tensor = stack_pop_tensor(&stack);
+                    tensor_save_pgm(img_tensor, filename);
+                    
+                    tensor_free(img_tensor);
+                    free(filename);
+                    break;
+                }
+                case '{': {
+                    char *filename = stack_pop_string(&stack);
+                    Tensor *loaded_tensor = tensor_load_raw(filename);
+                    stack_push_tensor(&stack, loaded_tensor);
+                    free(filename);
+                    break;}
+                case '}': {
+                    char *filename = stack_pop_string(&stack);
+                    Tensor *tensor_to_save = stack_pop_tensor(&stack);
+                    tensor_save_raw(tensor_to_save, filename);
+                    tensor_free(tensor_to_save);
+                    free(filename);
+                    break;}
+                default:{
                     fprintf(stderr, "Errore: Operatore o carattere sconosciuto '%c'\n", op);
-                    exit(EXIT_FAILURE);
+                    exit(EXIT_FAILURE);}
             }
         }
     }

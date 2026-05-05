@@ -65,7 +65,7 @@ run_test "Stampa multipla" "[ 5 ] p [ 10 ] p" 0 "data=[10]"
 
 printf "\n${BLUE}Operazioni aritmetiche${NC}\n"
 run_test "Somma vettoriale" "[ 1 2 3 ] [ 10 20 30 ] + p" 0 "Tensor (shape=[3], data=[11 22 33])"
-run_test "Sottrazione vettoriale" "[ 10 20 30 ] [ 1 2 3 ] - p" 0 "Tensor (shape=[3], data=[9 18 27])"
+run_test "Sottrazione vettoriale" "[ 1 2 3 ] [ 10 20 30 ] - p" 0 "Tensor (shape=[3], data=[9 18 27])"
 run_test "Moltiplicazione vettoriale" "[ 1 2 3 ] [ 4 5 6 ] * p" 0 "Tensor (shape=[3], data=[4 10 18])"
 
 printf "\n${BLUE}Operazioni di comparazione${NC}\n"
@@ -83,15 +83,16 @@ run_test "Selezione" "[ 5 6 7 8 ] [ 1 2 3 4 ] [ 1 1 0 0 ] $ p" 0 "Tensor (shape=
 
 printf "\n${BLUE}Operazioni specifiche per tensori${NC}\n"
 run_test "Prodotto matrici 2D @ 2D" "[ 2 0 1 2 ] [ 2 2 ] r [ 1 2 3 4 ] [ 2 2 ] r @ p" 0 "data=[4 4 10 8]"
-run_test "Prodotto matrici 1D @ 2D" "[ 1 2 3 4 5 6 ] [ 2 3 ] r [ 1 2 ] @ p" 0 "data=[9 12 15]"
-run_test "Prodotto matrici 2D @ 1D" "[ 5 6 ] [ 1 2 3 4 ] [ 2 2 ] r @ p" 0 "data=[17 39]"
 run_test "Prodotto scalare" "[ 1 2 3 ] [ 0 1 2 ] . p" 0 "Tensor (shape=[1], data=[8])"
+run_test "Convoluzione 2D" "[ 9 ] [ 1 ] f [ 3 3 ] r [ 0 1 0 1 1 1 0 1 0 ] [ 3 3 ] r c p" 0 "data=[3 4 3 4 5 4 3 4 3]"
 
 printf "\n${BLUE}Operazioni sulla forma dei tensori${NC}\n"
 run_test "Reshape" "[ 1 2 3 4 ] [ 2 2 ] r p" 0 "Tensor (shape=[2 2], data=[1 2 3 4])"
 run_test "Ravel" "[ 1 2 3 4 ] [ 2 2 ] r _ p" 0 "Tensor (shape=[4], data=[1 2 3 4])"
 run_test "Shape 1D" "[ 1 2 3 4 ] # p" 0 "Tensor (shape=[1], data=[4])"
 run_test "Shape 2D" "[ 1 2 3 4 5 6 ] [ 3 2 ] r # p" 0 "Tensor (shape=[2], data=[3 2])"
+
+run_test "Generazione Random (?)" "[ 2 3 ] ? # p" 0 "data=[2 3]"
 
 printf "\n${BLUE}Operazioni elemento per elemento${NC}\n"
 run_test "Relu" "[ -1 0 1 ] R p" 0 "Tensor (shape=[3], data=[0 0 1])"
@@ -104,6 +105,20 @@ run_test "Sommatoria" "[ -1 2 3 ] S p" 0 "Tensor (shape=[1], data=[4])"
 printf "\n${BLUE}Operazioni di filling di tensori${NC}\n"
 run_test "Fill 2D ciclico" "[ 2 3 ] [ 1 2 ] f p" 0 "data=[1 2 1 2 1 2]"
 run_test "Fill 1D singolo" "[ 5 ] [ 9 ] f p" 0 "shape=[5], data=[9 9 9 9 9]"
+
+printf "\n${BLUE}Operazioni di manipolazione dello stack${NC}\n"
+run_test "Duplicazione" "[ 10 20 ] d + p" 0 "data=[20 40]"
+run_test "Swap" "[ 10 10 ] [ 5 5 ] s - p" 0 "data=[5 5]"
+# run_test "Over" "[ 1 ] [ 2 ] o p p p" 0 
+run_test "Delete" "[ 1 ] D p" 1 "Stack vuoto"
+
+printf "\n${BLUE}Input/Output File (PGM)${NC}\n"
+run_test "Scrittura e Lettura PGM (Shape)" "[ 2 2 ] [ 1 ] f \"test_io.pgm\" ) \"test_io.pgm\" ( # p" 0 "data=[2 2]"
+run_test "Scrittura e Lettura PGM" "[ 2 2 ] [ 1 ] f \"test_io.pgm\" ) \"test_io.pgm\" ( p" 0 "data=[1 1 1 1]"
+rm -f test_io.pgm
+run_test "Scrittura e Lettura Raw mmap" "[ 3 3 ] [ 4 ] f \"test_raw.bin\" } \"test_raw.bin\" { p" 0 "data=[4 4 4 4 4 4 4 4 4]"
+rm -f test_raw.bin
+
 
 printf "\n\n${ORANGE}--- TEST NEGATIVI ---${NC}\n"
 printf "${ORANGE}Errori di Stack (Underflow)${NC}\n"
@@ -123,9 +138,11 @@ printf "\n${ORANGE}Errori Operazioni Reshape${NC}\n"
 run_test "Reshape volume errato" "[ 1 2 3 4 ] [ 3 3 ] r" 1 "numero di elementi"
 run_test "Reshape forma errata" "[ 1 2 3 4 ] [ 2 2 1 ] r" 1 "tensore forma"
 run_test "Dot product incompatibile" " [ 1 2 3 ] [ 1 2 ] ." 1 "shape diversa"
-run_test "Matmul dimensioni incompatibili" "[ 1 2 3 4 5 6 ] [ 3 2 ] r [ 1 2 3 4 ] [ 2 2 ] r @" 1 "Dimensioni interne"
+run_test "Moltiplicazione matriciale con dimensioni incompatibili" "[ 1 2 3 4 5 6 ] [ 3 2 ] r [ 1 2 3 4 ] [ 2 2 ] r @" 1 "Dimensioni interne"
+run_test "Convoluzione con kernel 1D" "[ 1 2 3 4 ] [ 2 2 ] r [ 1 2 3 ] c" 1 "2D"
+run_test "Convoluzione con immagine 1D" "[ 1 2 3 4 ] [ 1 2 3 4 ] [ 2 2 ] r c" 1 "2D"
 
-printf "${ORANGE}Errori di filling${NC}\n"
+printf "\n${ORANGE}Errori di filling${NC}\n"
 run_test "Fill con s non 1D" "[ 1 2 3 4 ] [ 2 2 ] r [ 1 2 ] f" 1 "1D"
 run_test "Fill con s troppo lungo" "[ 2 2 2 ] [ 1 ] f" 1 "forma"
 run_test "Fill con dimensione zero" "[ 0 5 ] [ 1 ] f" 1 "dimensioni"

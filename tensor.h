@@ -11,8 +11,16 @@
 #include <sys/types.h>
 
 typedef struct {
+    int32_t shape[MAX_DIM];
+    int32_t ndim;
+    off_t data_offset;
+} on_disk_tensor;
+
+typedef struct {
     float *data;
     int ref_count;
+    void *mmap_ptr;
+    size_t mmap_size;
 } TensorBuffer;
 
 typedef struct {

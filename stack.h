@@ -34,10 +34,12 @@ void stack_init(Stack *s);
 void stack_cleanup(Stack *s);
 
 void stack_push_tensor(Stack *s, Tensor *t);
-void stack_push_string(Stack *s, const char *str);
+
+void stack_push_string(Stack *s, char *str);
 
 Tensor* stack_pop_tensor(Stack *s);
 char* stack_pop_string(Stack *s);
+StackItem stack_pop(Stack *s);
 
 Tensor* stack_peek_tensor(Stack *s);
 

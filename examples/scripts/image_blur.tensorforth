@@ -1,0 +1,1 @@
+"examples/inputs/tortello.pgm" ( [ 5 5 ] [ 0.04 ] f c "examples/outputs/tortello_blurred.pgm" )

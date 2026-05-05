@@ -32,7 +32,6 @@ void stack_push_string(Stack *s, char *str) {
     
     s->items[s->top].type = ITEM_STRING;
     
-    // Sostituiamo strdup con malloc e strcpy (Standard C sicuro)
     s->items[s->top].data.string = (char *)malloc(strlen(str) + 1);
     if (s->items[s->top].data.string == NULL) {
         fprintf(stderr, "Errore: Allocazione memoria fallita per la stringa.\n");
